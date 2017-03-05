@@ -12,34 +12,52 @@ http://razokulover.hateblo.jp/entry/2017/02/23/164045
 const owner = (document._currentScript || document.currentScript).ownerDocument;
 
 const log = console.log;
+const _URL = (URL && URL.createObjectURL) ? URL : webkitURL;
 
 class Player {
   constructor(src, elem, shadow) {
     this.isPlaying = false;
     this.elem = elem;
-    this.imageDivs = [];
-    this.images = [];
+    this.gif = null;
+    this.blobs = null;
     this.lastFrameIdx = 0;
 
     // 準備をするPromiseを返します
     this.ready = new Promise((resolve, reject) => {
       new Gif(src).load()
-        .then( gif => {
-          this.gif = gif;
-          this.elem.innerHTML = '';
+        .then( gif => { 
+          return new Promise( (resolve, reject) => {
+            // log(gif);
 
-          // log(this.gif);
+            this.gif = gif;
+            const header = gif.header.toArrayBuffer();
+            const blobs = gif.body.frames.map( f => {
+              const body = gif.body.frame2ArrayBuffer(f);
+              const blob = new Blob([ header, body ], {type: 'image/gif'});
+              const url = _URL.createObjectURL(blob);
+              return { 
+                blob : blob
+                , url : url
+                , offset : f.offset
+              };
+            });
+
+            resolve(blobs);
+          });
+        })
+        .then( blobs => {
+          this.blobs = blobs;
+          this.elem.innerHTML = '';
 
           const styleSheet = document.createElement('style');
           styleSheet.media = 'screen';
           styleSheet.type = 'text/css';
 
           let css = '';
-          for ( let i=0, l=this.gif.body.frames.length; i<l; i++ ) {
+          for ( let i=0, l=blobs.length; i<l; i++ ) {
             const image = new Image();
-            image.src = this.gif.body.frames[i].url;
+            image.src = blobs[i].url;
             this.elem.appendChild(image);
-            this.images.push(image);
 
             css += ` #frames[data-frame="${i}"] img:nth-child(n + ${ i+2 }) { opacity: 0; }`
               + ` #frames[data-frame="${i}"] img:nth-child(${ i+1 }) { opacity: 1; }`
@@ -59,7 +77,7 @@ class Player {
     this.startTime = performance.now();
     this.isPlaying = true;
 
-    const initialOffset = this.gif.body.frames[this.lastFrameIdx].offset * 10; // マイクロ秒に揃える
+    const initialOffset = this.blobs[this.lastFrameIdx].offset * 10; // マイクロ秒に揃える
 
     /**
      * playTime（GIFのDelayTime）はミリ秒（1/100)、performance.now()はマイクロ秒（1/1000)なので注意
@@ -74,8 +92,8 @@ class Player {
       const current = this.gif.playTime * fraction;
 
       let i=1;
-      for ( let l=this.gif.body.frames.length
-        ; i < l && this.gif.body.frames[i].offset < current
+      for ( let l=this.blobs.length
+        ; i < l && this.blobs[i].offset < current
         ; i++) 
       { 
         // none;

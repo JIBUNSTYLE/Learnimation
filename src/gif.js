@@ -12,7 +12,6 @@ const log = function(){};
 // const log = console.log;
 
 const caches = new Map();
-const _URL = (URL && URL.createObjectURL) ? URL : webkitURL;
 
 export default class Gif {
   constructor(src) {
@@ -65,14 +64,6 @@ export default class Gif {
         })
         .then( playTime => {
           this.playTime = playTime;
-
-          const header = this.header.toArrayBuffer();
-          this.body.frames.forEach( f => {
-            const body = this.body.frame2ArrayBuffer(f);
-            f.blob = new Blob([ header, body ], {type: 'image/gif'});
-            f.url = _URL.createObjectURL(f.blob);
-          });
-
           resolve(this);
         })
         .catch( e => {
@@ -157,13 +148,14 @@ class Header {
     this.width = null;
     this.height = null;
     this.packedFields = null;
-      this.hasGlobalColorTable = null;
-      this.colorResolution = null;
-      this.isSorted = null;
-      this.globalColorTableSize = null;
+    this.hasGlobalColorTable = null;
+    this.colorResolution = null;
+    this.isSorted = null;
+    this.globalColorTableSize = null;
     this.backgroundColorIndex = null;
     this.pixelAspectRatio = null;
     this.globalColorTable = null;
+    this._originalBuffer = null;
   }
 
   read(buffer) {
@@ -193,14 +185,16 @@ class Header {
             // Global Color Tableが存在しない
         }
 
-        // DEBUG
-        this._buffer = buffer.slice(0, sr.index);
+        this._originalBuffer = buffer.slice(0, sr.index);
 
         // ヘッダー分を切り捨てた bufferを返す
         resolve(buffer.slice(sr.index, buffer.lenght));
       });
   }
 
+  /**
+   * Headerのデータ長を返します。
+   */
   length() {
     return this.signature.length 
       + this.version.length
@@ -213,6 +207,9 @@ class Header {
       ;
   }
 
+  /**
+   * 値からArrayBufferを作って返します。
+   */
   toArrayBuffer() {
     const _length = this.length();
     const buffer = new ArrayBuffer(_length);
@@ -261,16 +258,19 @@ class ImageDescriptor {
     this.width = null;
     this.height = null;
     this.packedFields = null;
-      this.hasLocalColorTable = null;
-      this.isInterlaced = null;
-      this.isSorted = null;
-      this.reserved = null;
-      this.localColorTableSize = null;
+    this.hasLocalColorTable = null;
+    this.isInterlaced = null;
+    this.isSorted = null;
+    this.reserved = null;
+    this.localColorTableSize = null;
     this.localColorTable = null;
     this.LZWMinimumCodeSide = null;
     this.imageData = [];
   }
 
+  /**
+   * ImageDescriptorのデータ長を返します。
+   */
   length() {
     return 1 // this.imageSeparator
       + 2 // this.left
@@ -283,7 +283,8 @@ class ImageDescriptor {
       + this.imageData.reduce(function(output, item) {
         return output 
           + 1 // BlockSize分
-          + item.blockSize;
+          + item.blockSize
+          ;
         }, 0)
       + 1 // Terminator
       ;
@@ -296,14 +297,17 @@ class GraphicControlExtension {
     this.graphicControlLabel = GRAPHIC_CONTROL_LABEL;
     this.blockSize = 0x04;
     this.packedFields = null;
-      this.reserved = null;
-      this.disposalMethod = null;
-      this.userInputFlag = null;
-      this.transparentColorFlag = null;
+    this.reserved = null;
+    this.disposalMethod = null;
+    this.userInputFlag = null;
+    this.transparentColorFlag = null;
     this.delayTime = null;
     this.transparentColorIndex = null;
   }
 
+  /**
+   * GraphicControlExtensionのデータ長（固定）を返します。
+   */
   length() {
     return 1 // this.extensionIntroducer
       + 1 // this.extensionLabel
@@ -326,6 +330,9 @@ class ApplicationExtension {
     this.applicationData = [];
   }
 
+  /**
+   * ApplicationExtensionのデータ長を返します。
+   */
   length() {
     return 1 // this.extensionIntroducer
       + 1 // this.extensionLabel
@@ -335,7 +342,8 @@ class ApplicationExtension {
       + this.applicationData.reduce(function(output, item) {
         return output 
           + 1 // BlockSize分
-          + item.blockSize;
+          + item.blockSize
+          ;
         }, 0)
       + 1 // Terminator
       ;
@@ -346,13 +354,10 @@ class Body {
   constructor() {
     this.applicationExtension = null;
     this.images = null;
-    this.frames = [];
+    this.frames = []; // graphicControl, imageDescriptor, offset
   }
 
   read(buffer) {
-    // DEBUG
-    this._buffer = buffer;
-
     return new Promise( (resolve, reject) => {
       const sr = new StreamReader(buffer);
       
@@ -370,8 +375,6 @@ class Body {
             graphicControl : block
             , imageDescriptor : null
             , offset : offset
-            , blob : null
-            , url : null
           };
           offset += block.delayTime;
 
@@ -573,6 +576,9 @@ class Body {
     return buffer;
   }
 
+  /**
+   * 値からArrayBufferを作って返します。startとendに引数を渡すことで、特定のフレーム部分を切り抜くことができます。
+   */
   toArrayBuffer(start=0, end=this.frames.length) {
     log(`start: ${start}, end: ${end}`);
     const _length = this.length(start, end);
