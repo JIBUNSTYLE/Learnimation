@@ -5,4 +5,4 @@
 #frames img { position: absolute; top: 0px; left: 0px; transform: translateZ(0); }
 
 #controller { background-color: grey; opacity: 0; }
-#progress { width: 1%; height: 20px; background-color: green; }
+#progress { width: 1%; height: 20px; background-color: green; transform: translateZ(0); }
