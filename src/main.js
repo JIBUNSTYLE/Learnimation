@@ -9,12 +9,12 @@ http://razokulover.hateblo.jp/entry/2017/02/23/164045
 
 // @see http://qiita.com/masashi127/items/9d81b0396f4834062ead
 // @see http://qiita.com/1000ch/items/b24e387d6102ee20fbba
-let owner = (document._currentScript || document.currentScript).ownerDocument;
+const owner = (document._currentScript || document.currentScript).ownerDocument;
 
 const log = console.log;
 
 class Player {
-  constructor(file, elem, shadow) {
+  constructor(src, elem, shadow) {
     this.isPlaying = false;
     this.elem = elem;
     this.imageDivs = [];
@@ -23,7 +23,7 @@ class Player {
 
     // 準備をするPromiseを返します
     this.ready = new Promise((resolve, reject) => {
-      new Gif(file).load()
+      new Gif(src).load()
         .then( gif => {
           this.gif = gif;
           this.elem.innerHTML = '';
@@ -135,13 +135,13 @@ class Learnimation extends HTMLElement {
 
   // MARK: - func
 
-  setup(file) {
-    if ( !file ) {
+  setup(src) {
+    if ( !src ) {
       log('src attribute is undefined.');
       return;
     }
 
-    this.player = new Player(file, this.shadow.querySelector('#frames'), this.shadow);
+    this.player = new Player(src, this.shadow.querySelector('#frames'), this.shadow);
     this.player.ready.then(() => {
       log('ready...');
     });
