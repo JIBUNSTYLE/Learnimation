@@ -1,0 +1,27 @@
+{
+  "sourceMaps": "inline",
+  "retainLines" : true,
+  "plugins": [
+    "syntax-async-functions",
+    "transform-decorators-legacy",
+    "transform-class-properties",
+    "transform-object-rest-spread",
+    "transform-flow-strip-types"
+  ],
+  "env": {
+    "test": {
+      "plugins": [
+        "transform-es2015-modules-commonjs",
+        "transform-async-to-generator",
+        "transform-runtime"
+       ]
+    },
+    "production": {
+      "presets": ["es2015"],
+      "plugins": [
+        "transform-async-to-generator",
+        "transform-runtime"
+      ]
+    }
+  }
+}

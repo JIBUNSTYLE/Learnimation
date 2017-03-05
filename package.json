@@ -1,0 +1,43 @@
+{
+  "name": "Learnimation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": {},
+  "author": "JIBUNSTYLE Inc.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:JIBUNSTYLE/Learnimation.git"
+  },
+  "scripts": {
+    "start": "yarn run watch:css & yarn run watch:js & http-server public -p 3355 -c-1",
+    "build:js": "webpack",
+    "build:js:production": "NODE_ENV=production webpack",
+    "build:css": "postcss -c .postcssrc.json",
+    "watch:js": "webpack -w",
+    "watch:css": "postcss -w -c .postcssrc.json",
+    "typecheck": "flow",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
+    "test": "NODE_ENV=test ava",
+    "cover": "nyc --reporter=lcov --reporter=text yarn test"
+  },
+  "devDependencies": {
+    "ava": "^0.18.2",
+    "babel-core": "^6.23.1",
+    "babel-loader": "^6.3.2",
+    "babel-plugin-transform-class-properties": "^6.23.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-flow-strip-types": "^6.22.0",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "http-server": "^0.9.0",
+    "watch": "^1.0.2",
+    "webpack": "^2.2.1",
+    "webpack-async-await": "^1.1.0"
+  },
+  "dependencies": {
+    "eslint": "^3.16.1",
+    "eslint-plugin-flowtype": "^2.30.0",
+    "eslint-plugin-import": "^2.2.0"
+  }
+}

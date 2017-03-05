@@ -1,0 +1,3 @@
+#frames { position: relative; }
+#frames div { position: absolute; transform: translateZ(0); }
+#frames img { position: absolute; transform: translateZ(0); }
