@@ -15,12 +15,19 @@ const log = console.log;
 const _URL = (URL && URL.createObjectURL) ? URL : webkitURL;
 
 class Player {
-  constructor(src, elem, shadow) {
+  constructor(src, shadow) {
     this.isPlaying = false;
-    this.elem = elem;
+    this.shadow = shadow;
+    
+    this.player = shadow.querySelector('#player');
+    this.elem = shadow.querySelector('#frames');
+    this.controller = shadow.querySelector('#controller');
+    this.progress = shadow.querySelector('#progress');
+
     this.gif = null;
     this.blobs = null;
     this.lastFrameIdx = 0;
+    this.preserved = null;
 
     // 準備をするPromiseを返します
     this.ready = new Promise((resolve, reject) => {
@@ -55,21 +62,73 @@ class Player {
           styleSheet.media = 'screen';
           styleSheet.type = 'text/css';
 
-          let css = '';
+          const width = this.gif.header.width;
+          let css = `#controller { width: ${ width }px; opacity: 1; }`;
           for ( let i=0, l=blobs.length; i<l; i++ ) {
             const image = new Image();
             image.src = blobs[i].url;
             this.elem.appendChild(image);
 
-            css += ` #frames[data-frame="${i}"] img:nth-child(n + ${ i+2 }) { opacity: 0; }`
-              + ` #frames[data-frame="${i}"] img:nth-child(${ i+1 }) { opacity: 1; }`
+            css += ` #player[data-frame="${i}"] img:nth-child(n + ${ i+2 }) { opacity: 0; }`
+              + ` #player[data-frame="${i}"] img:nth-child(${ i+1 }) { opacity: 1; }`
+              + ` #player[data-frame="${i}"] #progress { width: ${ 100*i/l }%; }`
               ;
           }
 
           const rule = document.createTextNode(css);
           styleSheet.appendChild(rule);
           shadow.appendChild(styleSheet);
-          
+
+          // Controllerでの再生位置制御
+          let isMouseDown = false;
+          // mousedown箇所に移動し中断
+          this.controller.addEventListener('mousedown', e => {
+            isMouseDown = true;
+            const fraction = (e.layerX-e.target.offsetLeft) / width;
+
+            // クリックした位置が、何番目のframeかを探す
+            const current = this.gif.playTime * fraction;
+
+            let i=1;
+            for ( let l=this.blobs.length
+              ; i < l && this.blobs[i].offset < current
+              ; i++) 
+            { 
+              // none;
+            }
+      
+            this.preserved = {
+              fraction : fraction 
+              , frameIdx : i-1
+            };
+            this.isPlaying = false;
+          });
+
+          // mousemoveで移動
+          this.controller.addEventListener('mousemove', e => {
+            if ( isMouseDown ) {
+              const fraction = (e.layerX-e.target.offsetLeft) / width;
+
+              // move後の位置が、何番目のframeかを探す
+              const current = this.gif.playTime * fraction;
+
+              let i=1;
+              for ( let l=this.blobs.length
+                ; i < l && this.blobs[i].offset < current
+                ; i++) 
+              { 
+                // none;
+              }
+
+              this.player.dataset['frame'] = this.lastFrameIdx = i-1;
+            }
+          });
+
+          // mouseupで中断箇所から再開
+          this.controller.addEventListener('mouseup', e => {
+            this.start();
+          });
+
           resolve();
         });
     });
@@ -85,7 +144,7 @@ class Player {
      * playTime（GIFのDelayTime）はミリ秒（1/100)、performance.now()はマイクロ秒（1/1000)なので注意
      */
     const animationLoop = () => {
-      const playTime = this.gif.playTime / speed * 10 // マイクロ秒に揃える
+      const playTime = 10 * this.gif.playTime / speed // マイクロ秒に揃える
         , elapsedTime = performance.now() - this.startTime
         , repeatCount = (initialOffset + elapsedTime) / playTime
         , fraction = repeatCount % 1;
@@ -101,10 +160,16 @@ class Player {
         // none;
       }
       
-      this.elem.dataset['frame'] = i-1;
+      this.player.dataset['frame'] = i-1;
 
       if ( this.isPlaying ) {
         window.requestAnimationFrame(animationLoop);
+
+      } else if ( this.preserved ) {
+        this.player.dataset['frame'] = this.preserved.frameIdx;
+        this.lastFrameIdx = this.preserved.frameIdx;
+        this.preserved = null;
+
       } else {
         this.lastFrameIdx = i-1;
       }
@@ -129,6 +194,7 @@ class Learnimation extends HTMLElement {
         this.player.isPlaying = false;
       }
     });
+
     this.shadow = this.createShadowRoot();
 
     // stamp out our template in the shadow dom
@@ -161,7 +227,7 @@ class Learnimation extends HTMLElement {
       return;
     }
 
-    this.player = new Player(src, this.shadow.querySelector('#frames'), this.shadow);
+    this.player = new Player(src, this.shadow);
     this.player.ready.then(() => {
       log('ready...');
     });
