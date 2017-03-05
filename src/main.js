@@ -49,6 +49,8 @@ class Player {
           this.blobs = blobs;
           this.elem.innerHTML = '';
 
+          // アニメーションGIFをフレーム毎にばらしてimgタグで重ねて配置
+          // 同時にdata-frame毎のスタイルを追加
           const styleSheet = document.createElement('style');
           styleSheet.media = 'screen';
           styleSheet.type = 'text/css';

@@ -1,3 +1,6 @@
 #frames { position: relative; }
-#frames div { position: absolute; transform: translateZ(0); }
-#frames img { position: absolute; transform: translateZ(0); }
+#frames :first-child { position: static; }
+#frames img { position: absolute; top: 0px; left:0px; transform: translateZ(0); }
+
+#controller { background-color: grey; }
+#progress { width: 1%; height: 20px; background-color: green; }
