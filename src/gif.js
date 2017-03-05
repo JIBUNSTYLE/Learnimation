@@ -353,7 +353,6 @@ class ApplicationExtension {
 class Body {
   constructor() {
     this.applicationExtension = null;
-    this.images = null;
     this.frames = []; // graphicControl, imageDescriptor, offset
   }
 
