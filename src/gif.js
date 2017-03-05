@@ -1,14 +1,12 @@
 'use strict';
 
-const DEFAULT_FRAME_DELAY = 10;
-
-const BLOCK_TERMINATOR = 0x00;
-const IMAGE_SEPARATOR = 0x2c;
-const EXTENSION_INTRODUCER = 0x21;
-const GRAPHIC_CONTROL_LABEL = 0xf9;
-const APPLICATION_EXTENSION_LABEL = 0xff;
-const TRAILER = 0x3b;
-
+const BLOCK_TERMINATOR = 0x00
+  , IMAGE_SEPARATOR = 0x2c
+  , EXTENSION_INTRODUCER = 0x21
+  , GRAPHIC_CONTROL_LABEL = 0xf9
+  , APPLICATION_EXTENSION_LABEL = 0xff
+  , TRAILER = 0x3b
+  ;
 
 const log = function(){};
 // const log = console.log;
@@ -375,7 +373,7 @@ class Body {
             , blob : null
             , url : null
           };
-          offset += block.delayTime || DEFAULT_FRAME_DELAY;
+          offset += block.delayTime;
 
         } else {
           frame.imageDescriptor = block;
