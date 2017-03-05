@@ -71,7 +71,7 @@ class Player {
 
             css += ` #player[data-frame="${i}"] img:nth-child(n + ${ i+2 }) { opacity: 0; }`
               + ` #player[data-frame="${i}"] img:nth-child(${ i+1 }) { opacity: 1; }`
-              + ` #player[data-frame="${i}"] #progress { width: ${ 100*i/l }%; }`
+              + ` #player[data-frame="${i}"] #progress { width: ${ 100*i/(l-1) }%; }`
               ;
           }
 
